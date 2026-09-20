@@ -1,5 +1,11 @@
-class AppConfig {
-  const AppConfig._();
+import 'env.dart';
 
-  static const appName = 'EyeGo';
+class AppConfig {
+  AppConfig._();
+
+  static const appName = 'Match point ;)';
+
+  static String get apiBaseUrl => Env.apiFootballBaseUrl;
+
+  static String get apiKey => Env.apiFootballKey;
 }

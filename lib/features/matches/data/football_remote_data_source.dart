@@ -1,4 +1,5 @@
 import '../../../core/network/api_client.dart';
+import '../../../core/constants/api_constants.dart';
 
 abstract interface class FootballRemoteDataSource {
   Future<void> getMatches();
@@ -11,6 +12,6 @@ class FootballRemoteDataSourceImpl implements FootballRemoteDataSource {
 
   @override
   Future<void> getMatches() async {
-    await _apiClient.dio.get('/matches');
+    await _apiClient.get(ApiConstants.fixturesEndpoint);
   }
 }

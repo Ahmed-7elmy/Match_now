@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/config/app_config.dart';
 import '../../../core/constants/route_constants.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -21,5 +22,5 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) =>
-      const Scaffold(body: Center(child: Text('EyeGo')));
+      const Scaffold(body: Center(child: Text(AppConfig.appName)));
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'core/config/app_config.dart';
 import 'core/routes/app_router.dart';
 import 'core/theme/app_theme.dart';
 
@@ -9,7 +10,8 @@ class EyeGoApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'EyeGo',
+      debugShowCheckedModeBanner: false,
+      title: AppConfig.appName,
       theme: AppTheme.light,
       routerConfig: AppRouter.router,
     );

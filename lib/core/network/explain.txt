@@ -1,0 +1,37 @@
+AppConfig
+   ↓
+Dio
+   ↓
+ApiInterceptor
+   ↓
+ApiClient
+   ↓
+API-Football
+
+                    .env
+                      │
+                      ▼
+                 AppConfig
+                      │
+                      ▼
+                    Dio
+                      │
+                      ▼
+              ApiInterceptor
+                      │
+              x-apisports-key
+                      │
+                      ▼
+                ApiClient
+                      │
+                      ▼
+               API-Football
+                      │
+               ┌──────┴──────┐
+               │             │
+            Success         Error
+               │             │
+             JSON       ErrorHandler
+                             │
+                             ▼
+                          Failure
