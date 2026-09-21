@@ -1,4 +1,4 @@
-import '../../matches/data/team_model.dart';
+import '../../matches/data/models/team_model.dart';
 
 class StandingModel {
   const StandingModel({

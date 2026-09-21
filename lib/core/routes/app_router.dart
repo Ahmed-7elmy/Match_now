@@ -1,3 +1,4 @@
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/auth/presentation/forgot_password_screen.dart';
@@ -5,6 +6,8 @@ import '../../features/auth/presentation/login_screen.dart';
 import '../../features/auth/presentation/signup_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
 import '../../features/matches/presentation/matches_screen.dart';
+import '../../features/matches/data/football_repository.dart';
+import '../../features/matches/logic/matches_bloc.dart';
 import '../../features/profile/presentation/profile_screen.dart';
 import '../../features/splash/presentation/splash_screen.dart';
 import '../constants/route_constants.dart';
@@ -34,7 +37,11 @@ class AppRouter {
       GoRoute(path: RouteConstants.home, builder: (_, _) => const HomeScreen()),
       GoRoute(
         path: RouteConstants.matches,
-        builder: (_, _) => const MatchesScreen(),
+        builder: (context, _) => BlocProvider(
+          create: (context) =>
+              MatchesBloc(repository: context.read<FootballRepository>()),
+          child: const MatchesScreen(),
+        ),
       ),
       GoRoute(
         path: RouteConstants.profile,

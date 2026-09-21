@@ -1,0 +1,7 @@
+BLoC / UI
+    -> FootballRepository
+        -> FootballRemoteDataSource
+            -> ApiClient
+                -> API-Football JSON
+            -> MatchModel.fromJson()
+        -> List<MatchModel>

@@ -1,0 +1,37 @@
+Matches state keeps both allMatches and filteredMatches.
+
+allMatches is the original fixture response and stays untouched while users
+search or filter. filteredMatches is rebuilt from allMatches whenever a search
+query, league, or status filter changes.
+
+For example, a search can reduce four fixtures to:
+
+Arsenal vs Chelsea
+
+Clearing the search sets searchQuery to an empty string and immediately restores
+all matches from the in-memory allMatches list. No repository call, Dio request,
+or API-Football request is required.
+
+SearchQueryChanged
+        |
+        v
+MatchesBloc
+        |
+        v
+state.allMatches
+        |
+        v
+where(...)
+        |
+        v
+filteredMatches
+        |
+        v
+emit new state
+        |
+        v
+UI rebuild
+
+This filtering is intentionally local and should feel nearly instant. A later
+optimization could add BLoC event transformers such as droppable(), but the
+current implementation keeps the behavior straightforward.

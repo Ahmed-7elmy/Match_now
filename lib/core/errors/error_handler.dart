@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 
+import 'exceptions.dart';
 import 'failures.dart';
 
 class ErrorHandler {
@@ -8,6 +9,30 @@ class ErrorHandler {
   static Failure handle(Object error) {
     if (error is DioException) {
       return _handleDioException(error);
+    }
+
+    if (error is NetworkException) {
+      return NetworkFailure(error.message);
+    }
+
+    if (error is TimeoutException) {
+      return TimeoutFailure(error.message);
+    }
+
+    if (error is UnauthorizedException) {
+      return UnauthorizedFailure(error.message);
+    }
+
+    if (error is RateLimitException) {
+      return RateLimitFailure(error.message);
+    }
+
+    if (error is ServerException) {
+      return ServerFailure(error.message);
+    }
+
+    if (error is ParsingException) {
+      return ParsingFailure(error.message);
     }
 
     return const UnknownFailure();
