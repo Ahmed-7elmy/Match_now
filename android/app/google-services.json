@@ -1,0 +1,98 @@
+{
+  "project_info": {
+    "project_number": "953979522807",
+    "project_id": "match-point-eyego",
+    "storage_bucket": "match-point-eyego.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:953979522807:android:b4f308dccc51e420e6cdf2",
+        "android_client_info": {
+          "package_name": "com.example.eyego_project"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "953979522807-esuqpgtm10i65bpt2d3nj5r87hfskups.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.eyego_project",
+            "certificate_hash": "013d2a24593c477536c759596b9eaca659c65064"
+          }
+        },
+        {
+          "client_id": "953979522807-ponul1ttajot8jeejk2fgtavb5dhr37d.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA52T43_ArxhvcXSoVTJU8yFAJYgZfjjLQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "953979522807-ponul1ttajot8jeejk2fgtavb5dhr37d.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "953979522807-35s989ggtf5untd86s0q51tq598mmm9t.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.eyegoProject"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:953979522807:android:1c844ea0e98725c6e6cdf2",
+        "android_client_info": {
+          "package_name": "com.eyego.matchpoint"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "953979522807-s8mq3fv2hn4fq5ftsij4cssji8o5jtnl.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.eyego.matchpoint",
+            "certificate_hash": "013d2a24593c477536c759596b9eaca659c65064"
+          }
+        },
+        {
+          "client_id": "953979522807-ponul1ttajot8jeejk2fgtavb5dhr37d.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA52T43_ArxhvcXSoVTJU8yFAJYgZfjjLQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "953979522807-ponul1ttajot8jeejk2fgtavb5dhr37d.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "953979522807-35s989ggtf5untd86s0q51tq598mmm9t.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.eyegoProject"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

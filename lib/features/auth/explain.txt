@@ -1,0 +1,59 @@
+AUTH GUARDS AND NAVIGATION
+
+App start flow
+
+       APP START
+              |
+              v
+            Splash
+              |
+              v
+ AuthBloc receives Firebase auth state
+              |
+              +--------------------------+
+              |                          |
+              v                          v
+ Unauthenticated              Authenticated
+              |                          |
+              v                          v
+            Login                    Home
+        /     \                    /  \
+       v       v                  v    v
+ Signup   Forgot            Matches Profile
+                                                                          |
+                                                                          v
+                                                                        Logout
+                                                                          |
+                                                                          v
+                                                                        Login
+
+How it works
+
+1. EyeGoApp creates one AuthBloc when the app starts. The bloc listens to
+      FirebaseAuth.authStateChanges through AuthRepository.
+
+2. Firebase reports whether a user exists. The bloc emits AuthAuthenticated
+      when a user exists, and AuthUnauthenticated when no user exists.
+
+3. AppRouter listens to only those two final states. While Firebase is still
+      checking, the router keeps the user on Splash.
+
+4. GoRouter calls redirect whenever that final auth state changes:
+      - Signed-out users can visit Login, Signup, and Forgot Password only.
+        Opening Home, Matches, or Profile redirects to Login.
+      - Signed-in users can visit Home, Matches, and Profile only.
+        Opening Splash or an auth screen redirects to Home.
+
+5. Widgets do not decide where authentication sends the user. A login button
+      only sends LoginSubmitted to AuthBloc. When Firebase confirms the login,
+      the router observes AuthAuthenticated and takes the user to Home.
+
+6. Logout sends LogoutRequested. Firebase then reports no user, AuthBloc emits
+      AuthUnauthenticated, and the same router guard redirects Profile to Login.
+
+Why keep the guard in AppRouter?
+
+Without a central guard, every protected screen must repeat "if logged out,
+go to login". One missed check could expose a protected route. redirect() runs
+for every route change, so Home, Matches, and Profile are protected in one
+place. The screen widgets only display UI and dispatch user actions.
