@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../core/theme/app_dimensions.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/utils/snackbar_utils.dart';
 import '../logic/auth_bloc.dart';
 import '../logic/auth_event.dart';
 import '../logic/auth_state.dart';
@@ -28,6 +30,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   void _sendResetEmail() {
     if (!_formKey.currentState!.validate()) return;
+    FocusScope.of(context).unfocus();
     context.read<AuthBloc>().add(
       PasswordResetRequested(email: _emailController.text),
     );
@@ -37,12 +40,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   Widget build(BuildContext context) => BlocConsumer<AuthBloc, AuthState>(
     listener: (context, state) {
       if (state is PasswordResetEmailSent) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Password reset email sent.')),
-        );
+        SnackbarUtils.showSuccess(context, 'Password reset email sent.');
       } else if (state is AuthFailure) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(state.failure.message)));
+        SnackbarUtils.showError(context, state.failure.message);
       }
     },
     builder: (context, state) {
@@ -55,14 +55,18 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             'Reset password',
             style: Theme.of(context).textTheme.headlineMedium,
           ),
-          const SizedBox(height: AppDimensions.spacingExtraSmall),
-          const Text('Enter your email address to receive a reset link.'),
-          const SizedBox(height: AppDimensions.spacingLarge),
+          const SizedBox(height: AppSpacing.extraSmall),
+          Text(
+            'Enter the email associated with your account and we will send a reset link.',
+            style: Theme.of(context).textTheme.bodyMedium
+                ?.copyWith(color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: AppSpacing.large),
           AuthEmailField(
             controller: _emailController,
             onFieldSubmitted: (_) => isLoading ? null : _sendResetEmail(),
           ),
-          const SizedBox(height: AppDimensions.spacingLarge),
+          const SizedBox(height: AppSpacing.large),
           AuthSubmitButton(
             label: 'Send reset email',
             isLoading: isLoading,

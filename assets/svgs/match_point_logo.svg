@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Match Point Logo</title>
+  <desc id="desc">A modern football icon with a green motion arc and Match Point wordmark.</desc>
+  <defs>
+    <linearGradient id="green" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#22C55E"/>
+      <stop offset="1" stop-color="#047857"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Football -->
+  <circle cx="256" cy="174" r="94" fill="#fff" stroke="#111827" stroke-width="10"/>
+  <polygon points="256,132 291,157 278,198 234,198 221,157" fill="#111827"/>
+  <polygon points="256,80 287,91 291,119 256,132 221,119 225,91" fill="#111827"/>
+  <polygon points="345,145 350,177 326,198 296,181 291,157 318,134" fill="#111827"/>
+  <polygon points="317,238 289,259 260,246 264,215 278,198 306,204" fill="#111827"/>
+  <polygon points="195,238 167,215 172,184 204,181 234,198 226,224" fill="#111827"/>
+  <polygon points="167,145 194,123 221,119 221,157 204,181 174,174" fill="#111827"/>
+  <path d="M221 119L194 123M291 119L318 134M204 181L234 198M278 198L306 204M226 224L260 246" fill="none" stroke="#111827" stroke-width="6" stroke-linecap="round"/>
+
+  <!-- Motion / pitch arc -->
+  <path d="M117 221C153 284 249 300 348 253" fill="none" stroke="url(#green)" stroke-width="18" stroke-linecap="round"/>
+  <path d="M128 202C156 250 208 270 263 270" fill="none" stroke="#34D399" stroke-width="7" stroke-linecap="round"/>
+
+  <!-- Wordmark -->
+  <text x="256" y="365" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="62" font-weight="800" fill="#111827">Match</text>
+  <text x="256" y="430" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="62" font-weight="800" fill="#059669">Point</text>
+
+  <!-- Match-point accent -->
+  <circle cx="402" cy="384" r="7" fill="#059669"/>
+  <path d="M402 398c0 13-5 22-15 29" fill="none" stroke="#059669" stroke-width="7" stroke-linecap="round"/>
+</svg>

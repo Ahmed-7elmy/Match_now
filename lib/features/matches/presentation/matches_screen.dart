@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/utils/snackbar_utils.dart';
+import '../../../core/widgets/app_empty_view.dart';
+import '../../../core/widgets/app_error_view.dart';
+import '../../../core/widgets/app_logo_background.dart';
 import '../logic/matches_bloc.dart';
 import '../logic/matches_event.dart';
 import '../logic/matches_state.dart';
@@ -50,17 +53,18 @@ class _MatchesScreenState extends State<MatchesScreen> {
           ),
         ],
       ),
-      body: BlocListener<MatchesBloc, MatchesState>(
-        listenWhen: (previous, current) =>
-            previous.failure != current.failure &&
-            current.failure != null &&
-            current.status != MatchesStatus.failure,
-        listener: (context, state) {
-          ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text(state.failure!.message)));
-        },
-        child: BlocBuilder<MatchesBloc, MatchesState>(
-          builder: (context, state) => _buildContent(context, state),
+      body: AppLogoBackground(
+        child: BlocListener<MatchesBloc, MatchesState>(
+          listenWhen: (previous, current) =>
+              previous.failure != current.failure &&
+              current.failure != null &&
+              current.status != MatchesStatus.failure,
+          listener: (context, state) {
+            SnackbarUtils.showError(context, state.failure!.message);
+          },
+          child: BlocBuilder<MatchesBloc, MatchesState>(
+            builder: (context, state) => _buildContent(context, state),
+          ),
         ),
       ),
     );
@@ -98,7 +102,11 @@ class _MatchesScreenState extends State<MatchesScreen> {
           if (state.filteredMatches.isEmpty)
             const SliverFillRemaining(
               hasScrollBody: false,
-              child: Center(child: Text('No matches found.')),
+              child: AppEmptyView(
+                icon: Icons.sports_soccer_outlined,
+                title: 'No matches found',
+                message: 'Try changing your search or filters.',
+              ),
             )
           else
             SliverPadding(
@@ -131,39 +139,14 @@ class _MatchesScreenState extends State<MatchesScreen> {
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         children: [
-          SizedBox(
-            height:
-                MediaQuery.sizeOf(context).height *
-                AppDimensions.failureContentHeightFactor,
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.large),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.error_outline,
-                      size: AppDimensions.errorIconSize,
-                    ),
-                    const SizedBox(height: AppSpacing.medium),
-                    Text(
-                      state.failure?.message ?? 'Something went wrong.',
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: AppSpacing.mediumLarge),
-                    FilledButton(
-                      onPressed: () => context.read<MatchesBloc>().add(
-                        MatchesRequested(
-                          date: state.selectedDate ?? DateTime.now(),
-                          leagueId: state.selectedLeagueId,
-                          season: state.selectedSeason,
-                          useDateFilter: state.isDateFilterActive,
-                        ),
-                      ),
-                      child: const Text('Retry'),
-                    ),
-                  ],
-                ),
+          AppErrorView(
+            message: state.failure?.message ?? 'Something went wrong.',
+            onRetry: () => context.read<MatchesBloc>().add(
+              MatchesRequested(
+                date: state.selectedDate ?? DateTime.now(),
+                leagueId: state.selectedLeagueId,
+                season: state.selectedSeason,
+                useDateFilter: state.isDateFilterActive,
               ),
             ),
           ),

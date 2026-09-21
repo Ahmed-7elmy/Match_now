@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/utils/date_formatter.dart';
@@ -24,12 +25,17 @@ class MatchCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     match.league.name,
-                    style: theme.textTheme.labelMedium,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                 ),
                 Text(
                   _statusText(match.statusShort),
-                  style: theme.textTheme.labelMedium,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: _statusColor(match.statusShort),
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
             ),
@@ -123,6 +129,12 @@ class MatchCard extends StatelessWidget {
         return status;
     }
   }
+
+  Color _statusColor(String status) => switch (status) {
+    '1H' || 'HT' || '2H' || 'LIVE' => AppColors.error,
+    'NS' => AppColors.primary,
+    _ => AppColors.textSecondary,
+  };
 }
 
 class _TeamView extends StatelessWidget {
@@ -181,7 +193,11 @@ class _ScoreView extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(label, style: Theme.of(context).textTheme.titleMedium),
+        Text(
+          label,
+          style: Theme.of(context).textTheme.titleLarge
+              ?.copyWith(fontWeight: FontWeight.w700),
+        ),
         const SizedBox(height: AppSpacing.extraSmall),
         Text(status, style: Theme.of(context).textTheme.labelSmall),
       ],

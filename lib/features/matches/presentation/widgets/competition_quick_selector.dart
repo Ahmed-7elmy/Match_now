@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/theme/app_dimensions.dart';
+import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../data/competition_catalog.dart';
 import '../../logic/matches_bloc.dart';
@@ -35,9 +36,9 @@ class CompetitionQuickSelector extends StatelessWidget {
               color: isSelected
                   ? colorScheme.secondaryContainer
                   : colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(AppSpacing.small),
+              borderRadius: BorderRadius.circular(AppRadius.small),
               child: InkWell(
-                borderRadius: BorderRadius.circular(AppSpacing.small),
+                borderRadius: BorderRadius.circular(AppRadius.small),
                 onTap: () => context.read<MatchesBloc>().add(
                   isSelected
                       ? MatchesRequested(date: selectedDate, clearFilters: true)

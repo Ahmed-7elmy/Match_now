@@ -79,7 +79,7 @@ class _RouterAppState extends State<_RouterApp> {
   Widget build(BuildContext context) => MaterialApp.router(
     debugShowCheckedModeBanner: false,
     title: AppConfig.appName,
-    theme: AppTheme.light,
+    theme: AppTheme.dark,
     routerConfig: _appRouter.router,
   );
 }

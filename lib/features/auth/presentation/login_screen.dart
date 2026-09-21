@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/config/app_config.dart';
 import '../../../core/constants/route_constants.dart';
-import '../../../core/theme/app_dimensions.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/utils/snackbar_utils.dart';
 import '../logic/auth_bloc.dart';
 import '../logic/auth_event.dart';
 import '../logic/auth_state.dart';
@@ -32,6 +35,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _login() {
     if (!_formKey.currentState!.validate()) return;
+    FocusScope.of(context).unfocus();
     context.read<AuthBloc>().add(
       LoginSubmitted(
         email: _emailController.text,
@@ -44,8 +48,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) => BlocConsumer<AuthBloc, AuthState>(
     listener: (context, state) {
       if (state is AuthFailure) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(state.failure.message)));
+        SnackbarUtils.showError(context, state.failure.message);
       }
     },
     builder: (context, state) {
@@ -54,12 +57,26 @@ class _LoginScreenState extends State<LoginScreen> {
         formKey: _formKey,
         children: [
           Text(
+            AppConfig.appName,
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+              color: AppColors.primary,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.small),
+          Text(
             'Welcome back',
             style: Theme.of(context).textTheme.headlineMedium,
           ),
-          const SizedBox(height: AppDimensions.spacingLarge),
+          const SizedBox(height: AppSpacing.extraSmall),
+          Text(
+            'Sign in to follow the football that matters to you.',
+            style: Theme.of(context).textTheme.bodyMedium
+                ?.copyWith(color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: AppSpacing.large),
           AuthEmailField(controller: _emailController),
-          const SizedBox(height: AppDimensions.spacingMedium),
+          const SizedBox(height: AppSpacing.medium),
           AuthPasswordField(
             controller: _passwordController,
             autofillHints: const [AutofillHints.password],
@@ -79,7 +96,7 @@ class _LoginScreenState extends State<LoginScreen> {
             isLoading: isLoading,
             onPressed: _login,
           ),
-          const SizedBox(height: AppDimensions.spacingSmall),
+          const SizedBox(height: AppSpacing.small),
           OutlinedButton(
             onPressed: isLoading
                 ? null
@@ -88,7 +105,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
             child: const Text('Continue with Google'),
           ),
-          const SizedBox(height: AppDimensions.spacingSmall),
+          const SizedBox(height: AppSpacing.small),
           TextButton(
             onPressed: isLoading
                 ? null

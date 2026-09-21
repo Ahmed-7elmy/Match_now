@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/app_dimensions.dart';
+import '../../../../core/widgets/app_button.dart';
 
 class AuthSubmitButton extends StatelessWidget {
   const AuthSubmitButton({
@@ -15,16 +15,6 @@ class AuthSubmitButton extends StatelessWidget {
   final VoidCallback onPressed;
 
   @override
-  Widget build(BuildContext context) => FilledButton(
-    onPressed: isLoading ? null : onPressed,
-    child: isLoading
-        ? const SizedBox(
-            width: AppDimensions.loadingIndicatorSize,
-            height: AppDimensions.loadingIndicatorSize,
-            child: CircularProgressIndicator(
-              strokeWidth: AppDimensions.loadingIndicatorStrokeWidth,
-            ),
-          )
-        : Text(label),
-  );
+  Widget build(BuildContext context) =>
+      AppButton(text: label, isLoading: isLoading, onPressed: onPressed);
 }

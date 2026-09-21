@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/constants/date_constants.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../data/competition_catalog.dart';
@@ -81,7 +82,7 @@ class MatchesFilterBar extends StatelessWidget {
             onChanged: (query) =>
                 context.read<MatchesBloc>().add(SearchQueryChanged(query)),
             decoration: const InputDecoration(
-              labelText: 'Search teams or leagues',
+              hintText: 'Search teams or competitions',
               prefixIcon: Icon(Icons.search),
               border: OutlineInputBorder(),
             ),
@@ -114,7 +115,7 @@ class MatchesFilterBar extends StatelessWidget {
 
   Future<void> _selectDate(BuildContext context, DateTime selectedDate) async {
     final today = DateUtils.dateOnly(DateTime.now());
-    final yesterday = today.subtract(const Duration(days: 1));
+    final yesterday = today.subtract(DateConstants.previousDay);
     final initialDate = selectedDate.isBefore(yesterday)
         ? yesterday
         : selectedDate.isAfter(today)

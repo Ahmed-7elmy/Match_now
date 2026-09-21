@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/config/app_config.dart';
 import '../../../core/constants/route_constants.dart';
-import '../../../core/theme/app_dimensions.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/utils/snackbar_utils.dart';
 import '../logic/auth_bloc.dart';
 import '../logic/auth_event.dart';
 import '../logic/auth_state.dart';
@@ -22,16 +25,19 @@ class _SignupScreenState extends State<SignupScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
   void _signUp() {
     if (!_formKey.currentState!.validate()) return;
+    FocusScope.of(context).unfocus();
     context.read<AuthBloc>().add(
       SignupSubmitted(
         email: _emailController.text,
@@ -44,8 +50,7 @@ class _SignupScreenState extends State<SignupScreen> {
   Widget build(BuildContext context) => BlocConsumer<AuthBloc, AuthState>(
     listener: (context, state) {
       if (state is AuthFailure) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(state.failure.message)));
+        SnackbarUtils.showError(context, state.failure.message);
       }
     },
     builder: (context, state) {
@@ -55,18 +60,48 @@ class _SignupScreenState extends State<SignupScreen> {
         showAppBar: true,
         children: [
           Text(
+            AppConfig.appName,
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+              color: AppColors.primary,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.small),
+          Text(
             'Create account',
             style: Theme.of(context).textTheme.headlineMedium,
           ),
-          const SizedBox(height: AppDimensions.spacingLarge),
+          const SizedBox(height: AppSpacing.extraSmall),
+          Text(
+            'Create an account to keep your football in one place.',
+            style: Theme.of(context).textTheme.bodyMedium
+                ?.copyWith(color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: AppSpacing.large),
           AuthEmailField(controller: _emailController),
-          const SizedBox(height: AppDimensions.spacingMedium),
+          const SizedBox(height: AppSpacing.medium),
           AuthPasswordField(
             controller: _passwordController,
             autofillHints: const [AutofillHints.newPassword],
             onFieldSubmitted: (_) => isLoading ? null : _signUp(),
           ),
-          const SizedBox(height: AppDimensions.spacingLarge),
+          const SizedBox(height: AppSpacing.medium),
+          AuthPasswordField(
+            controller: _confirmPasswordController,
+            label: 'Confirm password',
+            autofillHints: const [AutofillHints.newPassword],
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Confirm your password.';
+              }
+              if (value != _passwordController.text) {
+                return 'Passwords do not match.';
+              }
+              return null;
+            },
+            onFieldSubmitted: (_) => isLoading ? null : _signUp(),
+          ),
+          const SizedBox(height: AppSpacing.large),
           AuthSubmitButton(
             label: 'Create account',
             isLoading: isLoading,

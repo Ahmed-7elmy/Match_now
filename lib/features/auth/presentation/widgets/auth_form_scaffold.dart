@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_dimensions.dart';
+import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/widgets/app_logo_background.dart';
 
 class AuthFormScaffold extends StatelessWidget {
   const AuthFormScaffold({
@@ -17,17 +19,23 @@ class AuthFormScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: showAppBar ? AppBar() : null,
-    body: SafeArea(
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(
-            maxWidth: AppDimensions.authContentMaxWidth,
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(AppDimensions.spacingLarge),
-            child: Form(
-              key: formKey,
-              child: ListView(shrinkWrap: true, children: children),
+    body: AppLogoBackground(
+      child: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(AppSpacing.large),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxWidth: AppDimensions.authContentMaxWidth,
+              ),
+              child: Form(
+                key: formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
+                  children: children,
+                ),
+              ),
             ),
           ),
         ),

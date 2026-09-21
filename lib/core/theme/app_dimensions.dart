@@ -8,6 +8,11 @@ class AppDimensions {
   static const double spacingLarge = 24;
   static const double loadingIndicatorSize = 20;
   static const double loadingIndicatorStrokeWidth = 2;
+  static const double buttonMinHeight = 52;
+  static const double logoBackgroundSize = 300;
+  static const double logoBackgroundOpacity = 0.045;
+  static const double profileAvatarRadius = 42;
+  static const double emptyStateIconSize = 56;
 
   static const teamLogoSize = 48.0;
   static const errorIconSize = 48.0;

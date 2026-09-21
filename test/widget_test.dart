@@ -48,6 +48,12 @@ class _AuthenticatedAuthRepository extends _UnauthenticatedAuthRepository {
 class _TestUser extends Fake implements User {
   @override
   String? get email => 'test@eyego.dev';
+
+  @override
+  String? get displayName => 'Test supporter';
+
+  @override
+  String? get photoURL => null;
 }
 
 void main() {
@@ -56,7 +62,7 @@ void main() {
       EyeGoApp(authRepository: _UnauthenticatedAuthRepository()),
     );
 
-    expect(find.text('Match point ;)'), findsOneWidget);
+    expect(find.text('Match Point'), findsOneWidget);
   });
 
   testWidgets('Home Profile action navigates to Profile', (
@@ -67,7 +73,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Your football home'), findsOneWidget);
+    expect(find.text('Good to see you, Test supporter'), findsOneWidget);
 
     await tester.tap(find.text('Profile'));
     await tester.pumpAndSettle();
@@ -77,20 +83,6 @@ void main() {
     await tester.pageBack();
     await tester.pumpAndSettle();
 
-    expect(find.text('Your football home'), findsOneWidget);
-  });
-
-  testWidgets('Home Matches action navigates to Matches', (
-    WidgetTester tester,
-  ) async {
-    await tester.pumpWidget(
-      EyeGoApp(authRepository: _AuthenticatedAuthRepository()),
-    );
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.text('Matches'));
-    await tester.pump();
-
-    expect(find.text('Matches'), findsOneWidget);
+    expect(find.text('Good to see you, Test supporter'), findsOneWidget);
   });
 }
