@@ -273,6 +273,7 @@ files are present.
 | ADR-006 | Keep Splash while the initial auth state resolves. | The router cannot safely choose Home or Login until Firebase reports the persisted session. | The app avoids a transient incorrect route and shows a branded loading state. |
 | ADR-007 | Cache fixture requests and filter loaded matches locally. | Search and status changes should feel immediate and should not consume API-Football quota. | `MatchesBloc` caches by request parameters and derives `filteredMatches` from loaded fixtures. |
 | ADR-008 | Create a shared Material 3 design system and reusable state views. | Styling and loading/error/empty states should not be reinvented per screen. | Theme tokens and shared widgets give auth, home, matches, and profile a consistent responsive UI. |
+| ADR-009 | Defer a dedicated Domain/use-case layer. | Current operations are thin orchestration around one repository call or local state transformation, with no independent business-rule boundary yet. | The project stays lightweight without an extra forwarding layer; use cases can be introduced later for cross-repository workflows, offline synchronization, or richer football rules. |
 
 
 ## Setup
