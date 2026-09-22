@@ -268,7 +268,7 @@ flowchart LR
 ### Environment
 
 Create a `.env` file in the project root:
-
+like the .env.example
 ```env
 API_FOOTBALL_BASE_URL=https://v3.football.api-sports.io
 API_FOOTBALL_KEY=your_api_key
