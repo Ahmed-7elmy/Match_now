@@ -1,255 +1,1580 @@
-# Architecture Guide
+# Architecture & Project Structure
 
-## Project Structure
+The application follows a **feature-first architecture** combined with a lightweight layered approach.
 
-Match Point follows a **feature-first architecture** with a lightweight layered
-approach. Features own the code for a product capability, while `core/` owns
-cross-feature infrastructure and reusable UI.
+Instead of grouping the entire application by technical type, such as putting every screen in one folder and every model in another, the project is divided by **features**.
+
+Each feature owns the code related to its responsibility, while common functionality used by multiple features is placed inside `core/`.
+
+At a high level:
 
 ```text
 lib/
-  main.dart
-  app.dart
-  firebase_options.dart
-  core/
-    config/ constants/ errors/ network/ routes/ theme/ utils/ widgets/
-  features/
-    auth/ home/ matches/ profile/ splash/ standings/
+│
+├── main.dart
+├── app.dart
+├── firebase_options.dart
+│
+├── core/
+│   ├── config/
+│   ├── constants/
+│   ├── errors/
+│   ├── network/
+│   ├── routes/
+│   ├── theme/
+│   ├── utils/
+│   └── widgets/
+│
+└── features/
+    ├── auth/
+    ├── home/
+    ├── matches/
+    ├── profile/
+    └── splash/
 ```
 
-```mermaid
-flowchart TB
-  Application[Application] --> Core[core: shared infrastructure]
-  Application --> Features[features: product capabilities]
-  Features --> Auth[auth]
-  Features --> Matches[matches]
-  Features --> Home[home]
-  Features --> Profile[profile]
-  Features --> Splash[splash]
+The separation can be viewed as:
+
+```text
+Application
+│
+├── Core
+│   └── Shared infrastructure used by multiple features
+│
+└── Features
+    └── Independent application capabilities
 ```
 
-This organization keeps unrelated capabilities decoupled and makes it easy to
-find the code that owns a behavior.
+This makes the project easier to navigate and allows features to evolve without tightly coupling them to unrelated parts of the application.
 
-## Feature Layers
+---
 
-Complex features use three local layers:
+# Feature-First Architecture
+
+Every major application capability is placed inside `features/`.
+
+For complex features, the internal structure is separated into:
 
 ```text
 feature/
-  data/           # Models, repository, remote data source
-  logic/          # BLoC, events, states
-  presentation/   # Screens and feature-only widgets
+│
+├── data/
+├── logic/
+└── presentation/
 ```
 
-```mermaid
-flowchart TD
-  Presentation[Presentation] -->|events| Bloc[Logic: BLoC]
-  Bloc -->|repository contract| Repository[Data: Repository]
-  Repository --> Remote[Data: Remote data source]
-  Remote --> Service[API-Football or Firebase]
-  Service --> Remote
-  Remote --> Repository
-  Repository -->|Success or FailureResult| Bloc
-  Bloc -->|state| Presentation
-```
-
-### Presentation
-
-`presentation/` contains screens and widgets. It renders loading, success,
-empty, and error states; collects user input; sends BLoC events; and displays
-UI feedback. It does not call Firebase, Dio, or API-Football directly.
-
-```mermaid
-sequenceDiagram
-  participant User
-  participant Screen as MatchesScreen
-  participant Bloc as MatchesBloc
-  User->>Screen: Search for Arsenal
-  Screen->>Bloc: SearchQueryChanged
-  Bloc->>Bloc: Filter loaded matches
-  Bloc-->>Screen: Updated MatchesState
-  Screen-->>User: Rebuilt match list
-```
-
-### Logic
-
-`logic/` uses the BLoC pattern. Events represent intent, the BLoC coordinates
-work, and immutable states describe what the UI can render.
-
-Examples of events include `MatchesRequested`, `MatchesRefreshed`,
-`SearchQueryChanged`, `LoginSubmitted`, `GoogleLoginRequested`, and
-`LogoutRequested`.
-
-`MatchesBloc` caches fixture responses and performs search, league, and status
-filtering against already-loaded data. This reduces API-Football requests and
-keeps the presentation layer simple.
-
-```mermaid
-stateDiagram-v2
-  [*] --> initial
-  initial --> loading: MatchesRequested
-  loading --> success: fixtures loaded
-  loading --> failure: request failed
-  success --> success: search or filter change
-  success --> loading: request new fixtures
-  failure --> loading: retry
-```
-
-### Data
-
-`data/` retrieves and transforms external data. It contains models, repository
-contracts/implementations, and remote data sources.
+The general responsibility of each layer is:
 
 ```text
-matches/data/
-  models/league_model.dart
-  models/match_model.dart
-  models/team_model.dart
-  competition_catalog.dart
-  football_remote_data_source.dart
-  football_repository.dart
+Presentation
+     │
+     │ sends Events / reads State
+     ▼
+Logic / BLoC
+     │
+     │ requests application data
+     ▼
+Repository
+     │
+     ▼
+Remote Data Source
+     │
+     ▼
+External Service / API
 ```
 
-Models transform API JSON into typed Dart data. The rest of the app works with
-`MatchModel`, `TeamModel`, and `LeagueModel`, rather than raw JSON maps.
+Or more simply:
 
-## Repository and Remote Source
-
-The repository sits between BLoC logic and external systems. BLoCs use a stable
-repository contract and do not need to know whether data comes from Dio,
-Firebase, or a future cache.
-
-```mermaid
-flowchart LR
-  MatchesBloc --> FootballRepository
-  FootballRepository --> FootballRemoteDataSource
-  FootballRemoteDataSource --> ApiClient
-  ApiClient --> Dio
-  Dio --> APIFootball[API-Football]
-  APIFootball --> JSON
-  JSON --> MatchModel[MatchModel.fromJson]
-  MatchModel --> MatchesBloc
+```text
+UI
+ ↓
+BLoC
+ ↓
+Repository
+ ↓
+Remote Data Source
+ ↓
+API / Firebase
 ```
 
-`FootballRemoteDataSourceImpl` builds fixture query parameters, calls
-`ApiClient`, validates API-level errors, and maps the `response` payload to
-models. `FootballRepositoryImpl` converts exceptions into `Result` values,
-allowing the BLoC to handle expected failures without infrastructure-specific
-`try/catch` code.
+This ensures that widgets do not directly communicate with APIs or Firebase.
 
-The authentication feature follows the same boundary:
+---
 
-```mermaid
-flowchart LR
-  AuthBloc --> AuthRepository
-  AuthRepository --> FirebaseSource[FirebaseAuthRemoteDataSource]
-  FirebaseSource --> Firebase[Firebase Authentication]
-  Firebase --> FirebaseSource
-  FirebaseSource --> AuthRepository
-  AuthRepository --> AuthBloc
+# Presentation Layer
+
+The `presentation/` folder contains everything related to what the user sees and interacts with.
+
+Examples include:
+
+```text
+presentation/
+├── login_screen.dart
+├── matches_screen.dart
+└── widgets/
+    ├── match_card.dart
+    └── matches_filter_bar.dart
 ```
 
-## Core Infrastructure
+Its responsibilities include:
 
-`core/` contains reusable code that should not belong to a single feature.
+* Displaying application data.
+* Rendering loading, success, empty, and error states.
+* Collecting user input.
+* Sending events to BLoC.
+* Listening to states produced by BLoC.
+* Showing UI-specific feedback such as snackbars.
 
-| Area | Purpose |
-| --- | --- |
-| `config/` | Reads `.env` values through `Env` and exposes them through `AppConfig` |
-| `constants/` | Centralizes API, date, and route constants |
-| `network/` | Configures Dio, shared API calls, and API authentication headers |
-| `errors/` | Converts technical exceptions into app-level failures |
-| `routes/` | Defines GoRouter routes and the authentication redirect guard |
-| `theme/` | Defines colors, spacing, radius, dimensions, and Material theme settings |
-| `utils/` | Provides `Result`, validators, date formatting, and Snackbar helpers |
-| `widgets/` | Provides shared buttons, text fields, branded background, empty, and error views |
+The presentation layer does **not** directly call Firebase, Dio, or API-Football.
 
-### Network Flow
+For example:
 
-```mermaid
-flowchart TD
-  DotEnv[.env] --> Env[Env]
-  Env --> AppConfig
-  AppConfig --> ApiClient
-  ApiClient --> Dio
-  Dio --> Interceptor[ApiInterceptor]
-  Interceptor --> Header[x-apisports-key]
-  Header --> APIFootball[API-Football]
+```text
+User types "Arsenal"
+        │
+        ▼
+MatchesScreen
+        │
+        ▼
+SearchQueryChanged
+        │
+        ▼
+MatchesBloc
+        │
+        ▼
+New MatchesState
+        │
+        ▼
+MatchesScreen rebuilds
 ```
 
-The API base URL and key remain in `.env`, rather than being distributed across
-features. `ApiClient` centralizes Dio timeouts and JSON configuration, and
-`ApiInterceptor` adds the API-Football key to outgoing requests.
+---
 
-### Error Handling
+# Logic Layer
 
-Technical exceptions are converted to predictable application failures before
-they reach a BLoC or UI.
+The `logic/` folder contains the state management of the feature.
 
-```mermaid
-flowchart LR
-  Technical[Dio or Firebase exception] --> Mapper[ErrorHandler or AuthFailureMapper]
-  Mapper --> Failure[Network, timeout, unauthorized, rate limit, server, parsing, or unknown failure]
-  Failure --> Repository
-  Repository --> Result[FailureResult]
-  Result --> Bloc
-  Bloc --> UI[User-facing state and feedback]
+The application uses the **BLoC pattern**.
+
+A typical BLoC feature contains:
+
+```text
+logic/
+├── feature_bloc.dart
+├── feature_event.dart
+└── feature_state.dart
 ```
 
-## Routing and Authentication Guard
+For example:
 
-`AppRouter` is the single navigation authority. It observes `AuthBloc` and
-keeps protected routes unavailable to signed-out users. The splash route remains
-visible until Firebase resolves the initial session.
-
-```mermaid
-flowchart TD
-  Start[App start] --> Splash
-  Splash --> Resolved{Auth state resolved?}
-  Resolved -- No --> Splash
-  Resolved -- Yes --> SignedIn{Authenticated?}
-  SignedIn -- No --> AuthRoutes[Login, sign up, reset password]
-  SignedIn -- Yes --> Home
-  Home --> Matches
-  Home --> Profile
-  Profile -->|LogoutRequested| AuthRoutes
+```text
+matches/
+└── logic/
+    ├── matches_bloc.dart
+    ├── matches_event.dart
+    └── matches_state.dart
 ```
 
-Authentication navigation is state-driven. A login screen dispatches
-`LoginSubmitted`; it does not manually push Home. Firebase emits the new auth
-state, `AuthBloc` emits `AuthAuthenticated`, and the router redirects to Home.
+### Events
 
-## Feature Notes
+Events describe something that happened in the application.
 
-### Authentication
+Examples:
 
-Supports email/password registration and sign-in, Google Sign-In on supported
-non-web platforms, password reset, logout, and session persistence through
-Firebase `authStateChanges()`.
+```text
+MatchesRequested
+MatchesRefreshed
+SearchQueryChanged
+LeagueFilterChanged
+StatusFilterChanged
+LoginSubmitted
+GoogleLoginRequested
+LogoutRequested
+```
 
-### Matches
+### BLoC
 
-Fetches API-Football fixtures; supports competition, date, season, status, and
-text filters; caches fixture requests; and renders loading, empty, failure,
-retry, and refresh states.
+The BLoC receives events and decides how the application state should change.
 
-### Home and Profile
+For example:
 
-Home is an authenticated landing screen with links to matches and profile.
-Profile reads from the global `AuthBloc`, shows available Firebase user data,
-and dispatches logout through the same BLoC.
+```text
+SearchQueryChanged("Arsenal")
+           │
+           ▼
+      MatchesBloc
+           │
+           ▼
+Filter already loaded matches
+           │
+           ▼
+     MatchesState
+```
 
-### Splash and Standings
+Search and filtering are performed locally on previously fetched data instead of sending a new API request for every user interaction.
 
-Splash is a branded auth-resolution screen. `standings/` is reserved for a
-future feature and currently has no implementation.
+### State
 
-## Bootstrap
+State represents the information required by the UI at a specific moment.
 
-`main.dart` initializes Flutter bindings, `.env`, Firebase, Google Sign-In
-where supported, and portrait orientation before starting `EyeGoApp`.
+For Matches, state can contain information such as:
 
-`app.dart` is the composition root. It creates and provides the long-lived
-repositories, API client, remote sources, application-level `AuthBloc`, dark
-theme, and router configuration.
+```text
+Loading status
+All matches
+Filtered matches
+Search query
+Selected competition
+Selected match status
+Refresh status
+Failure information
+```
+
+The UI simply reacts to these state changes.
+
+---
+
+# Data Layer
+
+The `data/` folder contains code responsible for retrieving and transforming data.
+
+A data layer generally contains:
+
+```text
+data/
+│
+├── models/
+├── remote_data_source.dart
+└── repository.dart
+```
+
+The Matches feature currently follows this structure:
+
+```text
+matches/
+└── data/
+    ├── models/
+    │   ├── league_model.dart
+    │   ├── match_model.dart
+    │   └── team_model.dart
+    │
+    ├── competition_catalog.dart
+    ├── football_remote_data_source.dart
+    └── football_repository.dart
+```
+
+## Models
+
+Models represent structured application data.
+
+Examples:
+
+```text
+MatchModel
+TeamModel
+LeagueModel
+```
+
+They convert raw JSON returned by the API into strongly typed Dart objects.
+
+For example:
+
+```text
+API JSON
+   │
+   ▼
+MatchModel.fromJson()
+   │
+   ▼
+MatchModel
+```
+
+The rest of the application therefore works with Dart objects instead of raw JSON maps.
+
+---
+
+## Remote Data Source
+
+The Remote Data Source communicates directly with the external service.
+
+For football data:
+
+```text
+FootballRemoteDataSource
+          │
+          ▼
+      ApiClient
+          │
+          ▼
+    API-Football
+```
+
+It is responsible for:
+
+* Selecting the correct endpoint.
+* Building query parameters.
+* Reading the API response.
+* Checking API-level errors.
+* Converting JSON into models.
+
+It does not contain UI logic.
+
+---
+
+## Repository
+
+The Repository sits between the BLoC and the data source.
+
+```text
+MatchesBloc
+     │
+     ▼
+FootballRepository
+     │
+     ▼
+FootballRemoteDataSource
+```
+
+The repository hides implementation details from the BLoC.
+
+The BLoC does not need to know whether the data came from Dio, Firebase, an API, or eventually a local cache.
+
+For example:
+
+```text
+BLoC / UI
+    │
+    ▼
+FootballRepository
+    │
+    ▼
+FootballRemoteDataSource
+    │
+    ▼
+ApiClient
+    │
+    ▼
+API-Football JSON
+    │
+    ▼
+MatchModel.fromJson()
+    │
+    ▼
+List<MatchModel>
+```
+
+The repository also converts technical errors into application-friendly results.
+
+---
+
+# Core Layer
+
+The `core/` folder contains infrastructure and reusable components that are not specific to one feature.
+
+```text
+core/
+│
+├── config/
+├── constants/
+├── errors/
+├── network/
+│   └── interceptors/
+├── routes/
+├── theme/
+├── utils/
+└── widgets/
+```
+
+Each folder has a separate responsibility.
+
+---
+
+## `core/config`
+
+```text
+core/config/
+├── app_config.dart
+└── env.dart
+```
+
+This folder manages application configuration and environment variables.
+
+The project loads values such as:
+
+```text
+API_FOOTBALL_BASE_URL
+API_FOOTBALL_KEY
+```
+
+from `.env`.
+
+The configuration flow is:
+
+```text
+.env
+ │
+ ▼
+Env
+ │
+ ▼
+AppConfig
+ │
+ ▼
+Application infrastructure
+```
+
+This avoids scattering environment values throughout the codebase.
+
+---
+
+# API Configuration & Network Architecture
+
+The football API network flow is:
+
+```text
+                    .env
+                      │
+                      ▼
+                     Env
+                      │
+                      ▼
+                 AppConfig
+                      │
+                      ▼
+                     Dio
+                      │
+                      ▼
+              ApiInterceptor
+                      │
+              x-apisports-key
+                      │
+                      ▼
+                 ApiClient
+                      │
+                      ▼
+               API-Football
+                      │
+               ┌──────┴──────┐
+               │             │
+               ▼             ▼
+            Success         Error
+               │             │
+               ▼             ▼
+             JSON       ErrorHandler
+                             │
+                             ▼
+                          Failure
+```
+
+Each component has a specific responsibility.
+
+### `Env`
+
+Reads environment variables from `.env`.
+
+### `AppConfig`
+
+Provides application configuration to the rest of the project without requiring other classes to access `.env` directly.
+
+### Dio
+
+Dio is the HTTP client used to communicate with API-Football.
+
+It provides:
+
+* HTTP requests.
+* Query parameters.
+* Timeouts.
+* Interceptors.
+* Structured HTTP errors.
+
+### `ApiInterceptor`
+
+The interceptor automatically adds API authentication information to outgoing requests.
+
+For API-Football:
+
+```text
+x-apisports-key
+```
+
+This means individual repositories and data sources do not repeatedly add the API key.
+
+Conceptually:
+
+```text
+Request
+   │
+   ▼
+ApiInterceptor
+   │
+   ├── Add x-apisports-key
+   │
+   ▼
+API-Football
+```
+
+### `ApiClient`
+
+`ApiClient` wraps Dio and provides a shared interface for HTTP communication.
+
+Instead of every feature constructing its own Dio client:
+
+```text
+FootballRemoteDataSource
+          │
+          ▼
+       ApiClient
+          │
+          ▼
+         Dio
+```
+
+This centralizes HTTP configuration.
+
+---
+
+## `core/network`
+
+```text
+core/network/
+├── api_client.dart
+├── network_info.dart
+└── interceptors/
+    └── api_interceptor.dart
+```
+
+### `api_client.dart`
+
+Provides the configured Dio client and shared HTTP operations.
+
+### `network_info.dart`
+
+Provides information about network connectivity.
+
+Connectivity is treated as a useful signal, while the actual HTTP request remains the final authority on whether communication succeeded.
+
+### `interceptors/`
+
+Contains request/response interceptors.
+
+Currently the API interceptor handles API-Football authentication headers.
+
+---
+
+# Error Handling
+
+```text
+core/errors/
+├── auth_failure_mapper.dart
+├── error_handler.dart
+├── exceptions.dart
+└── failures.dart
+```
+
+The project separates **technical exceptions** from **application failures**.
+
+The general flow is:
+
+```text
+Dio / Firebase Exception
+          │
+          ▼
+     ErrorHandler
+          │
+          ▼
+        Failure
+          │
+          ▼
+      Repository
+          │
+          ▼
+         BLoC
+          │
+          ▼
+          UI
+```
+
+Instead of allowing the UI to understand errors such as:
+
+```text
+DioException
+SocketException
+FirebaseAuthException
+HTTP 429
+HTTP 500
+```
+
+they are converted into application-level failures such as:
+
+```text
+NetworkFailure
+TimeoutFailure
+UnauthorizedFailure
+RateLimitFailure
+ServerFailure
+ParsingFailure
+UnknownFailure
+```
+
+The UI therefore receives a predictable error representation.
+
+---
+
+## `exceptions.dart`
+
+Contains low-level exceptions that can occur while retrieving or parsing data.
+
+Examples include:
+
+```text
+ServerException
+NetworkException
+TimeoutException
+UnauthorizedException
+RateLimitException
+ParsingException
+```
+
+---
+
+## `failures.dart`
+
+Contains application-level failure classes.
+
+These failures are safe for the repository/BLoC layer to work with.
+
+---
+
+## `error_handler.dart`
+
+Maps network and technical errors into the correct `Failure`.
+
+Example:
+
+```text
+HTTP 429
+   │
+   ▼
+DioException
+   │
+   ▼
+ErrorHandler
+   │
+   ▼
+RateLimitFailure
+   │
+   ▼
+MatchesBloc
+   │
+   ▼
+User-friendly error
+```
+
+---
+
+## `auth_failure_mapper.dart`
+
+Authentication has its own Firebase-specific error mapping.
+
+For example:
+
+```text
+FirebaseAuthException
+        │
+        ▼
+AuthFailureMapper
+        │
+        ▼
+User-friendly Failure
+```
+
+This allows errors such as invalid credentials or an existing email account to be displayed in a consistent way.
+
+---
+
+# `core/constants`
+
+```text
+core/constants/
+├── api_constants.dart
+├── date_constants.dart
+└── route_constants.dart
+```
+
+Constants are centralized so values are not repeated throughout the application.
+
+### `api_constants.dart`
+
+Contains API-related values such as:
+
+* Endpoint names.
+* Header names.
+* Network timeouts.
+
+### `date_constants.dart`
+
+Contains reusable date-related constants.
+
+### `route_constants.dart`
+
+Contains route paths such as:
+
+```text
+/splash
+/login
+/signup
+/forgot-password
+/home
+/matches
+/profile
+```
+
+This avoids hardcoding route strings throughout widgets.
+
+---
+
+# Routing
+
+```text
+core/routes/
+├── app_router.dart
+└── routes.dart
+```
+
+The application uses **GoRouter** for navigation.
+
+`AppRouter` defines the routes and also contains the central authentication guard.
+
+The router is responsible for deciding which routes can be accessed depending on Firebase authentication state.
+
+Routes include:
+
+```text
+Splash
+Login
+Signup
+Forgot Password
+Home
+Matches
+Profile
+```
+
+---
+
+# Authentication Guards & Navigation
+
+Authentication navigation is controlled centrally by `AppRouter`.
+
+Widgets do not manually decide where authentication should send the user.
+
+The startup flow is:
+
+```text
+                     APP START
+                         │
+                         ▼
+                       Splash
+                         │
+                         ▼
+          AuthBloc receives Firebase state
+                         │
+              ┌──────────┴──────────┐
+              │                     │
+              ▼                     ▼
+       Unauthenticated         Authenticated
+              │                     │
+              ▼                     ▼
+            Login                  Home
+          /       \               /    \
+         ▼         ▼             ▼      ▼
+      Signup     Forgot       Matches  Profile
+                                         │
+                                         ▼
+                                       Logout
+                                         │
+                                         ▼
+                                       Login
+```
+
+## How authentication navigation works
+
+### 1. Application startup
+
+`app.dart` creates one application-level `AuthBloc`.
+
+That bloc listens to Firebase authentication state through:
+
+```text
+FirebaseAuth
+     │
+     ▼
+AuthRemoteDataSource
+     │
+     ▼
+AuthRepository
+     │
+     ▼
+AuthBloc
+```
+
+Firebase remains the source of truth for the user's session.
+
+---
+
+### 2. Firebase reports authentication state
+
+Firebase exposes:
+
+```text
+authStateChanges()
+```
+
+When Firebase returns a user:
+
+```text
+Firebase User
+     │
+     ▼
+AuthUserChanged
+     │
+     ▼
+AuthAuthenticated
+```
+
+When Firebase returns no user:
+
+```text
+null
+ │
+ ▼
+AuthUserChanged
+ │
+ ▼
+AuthUnauthenticated
+```
+
+---
+
+### 3. Splash waits for Firebase
+
+While Firebase is determining the initial session, the application remains on the Splash screen.
+
+The Splash screen itself does not perform authentication logic or manually navigate.
+
+Its only responsibility is to display the startup UI.
+
+---
+
+### 4. GoRouter reacts to authentication
+
+When the final authentication state changes, GoRouter reevaluates its `redirect()` guard.
+
+For a signed-out user:
+
+```text
+Allowed:
+Login
+Signup
+Forgot Password
+
+Protected:
+Home
+Matches
+Profile
+```
+
+Trying to open a protected route redirects the user to Login.
+
+For a signed-in user:
+
+```text
+Allowed:
+Home
+Matches
+Profile
+```
+
+Trying to open:
+
+```text
+Splash
+Login
+Signup
+Forgot Password
+```
+
+redirects the user to Home.
+
+---
+
+### 5. Login screen does not navigate to Home
+
+A login button only sends:
+
+```text
+LoginSubmitted
+```
+
+to `AuthBloc`.
+
+The complete flow is:
+
+```text
+LoginScreen
+     │
+     ▼
+LoginSubmitted
+     │
+     ▼
+AuthBloc
+     │
+     ▼
+AuthRepository
+     │
+     ▼
+FirebaseAuth
+     │
+     ▼
+Firebase session changes
+     │
+     ▼
+AuthAuthenticated
+     │
+     ▼
+GoRouter redirect
+     │
+     ▼
+Home
+```
+
+This means the screen never needs:
+
+```text
+Login succeeded → manually push Home
+```
+
+Navigation is driven by authentication state.
+
+---
+
+### 6. Logout uses the same architecture
+
+Profile sends:
+
+```text
+LogoutRequested
+```
+
+The flow becomes:
+
+```text
+ProfileScreen
+     │
+     ▼
+LogoutRequested
+     │
+     ▼
+AuthBloc
+     │
+     ▼
+FirebaseAuth.signOut()
+     │
+     ▼
+authStateChanges() → null
+     │
+     ▼
+AuthUnauthenticated
+     │
+     ▼
+GoRouter guard
+     │
+     ▼
+Login
+```
+
+---
+
+# Why Keep Authentication Guards in `AppRouter`?
+
+Without a central guard, every protected screen would need logic such as:
+
+```text
+if user is not logged in
+    navigate to login
+```
+
+That duplicates logic and makes it easier to accidentally leave a protected screen accessible.
+
+Instead:
+
+```text
+AppRouter.redirect()
+```
+
+protects all routes in one location.
+
+The responsibilities remain clear:
+
+```text
+Firebase
+→ owns the authentication session
+
+AuthBloc
+→ represents authentication state
+
+GoRouter
+→ controls navigation
+
+Screens
+→ display UI and dispatch user actions
+```
+
+---
+
+# `core/theme`
+
+```text
+core/theme/
+├── app_colors.dart
+├── app_dimensions.dart
+├── app_radius.dart
+├── app_spacing.dart
+├── app_text_styles.dart
+└── app_theme.dart
+```
+
+The theme folder defines the application's visual design system.
+
+### `app_colors.dart`
+
+Centralizes application colors.
+
+### `app_spacing.dart`
+
+Provides consistent spacing values.
+
+### `app_radius.dart`
+
+Defines common border-radius values.
+
+### `app_dimensions.dart`
+
+Contains reusable sizing and layout dimensions.
+
+### `app_text_styles.dart`
+
+Contains reusable typography definitions where custom styles are required.
+
+### `app_theme.dart`
+
+Builds the application's Material theme and configures shared styling for components such as:
+
+* Buttons.
+* Text fields.
+* Cards.
+* App bars.
+* Colors.
+* Typography.
+
+This avoids styling every widget independently.
+
+---
+
+# `core/utils`
+
+```text
+core/utils/
+├── date_formatter.dart
+├── result.dart
+├── snackbar_utils.dart
+└── validators.dart
+```
+
+Utilities contain small reusable functions or types that do not belong to a particular feature.
+
+### `date_formatter.dart`
+
+Formats dates and times used by match information and UI.
+
+### `result.dart`
+
+Defines the result type used between repositories and BLoCs.
+
+Conceptually:
+
+```text
+Repository Result
+      │
+ ┌────┴────┐
+ ▼         ▼
+Success   FailureResult
+```
+
+This prevents BLoCs from needing to catch infrastructure exceptions.
+
+### `snackbar_utils.dart`
+
+Centralizes Snackbar behavior so success/error feedback looks consistent across screens.
+
+### `validators.dart`
+
+Contains reusable form validation functions used by authentication screens.
+
+Examples include validating:
+
+```text
+Email
+Password
+Required fields
+```
+
+---
+
+# Shared Widgets
+
+```text
+core/widgets/
+├── app_button.dart
+├── app_empty_view.dart
+├── app_error_view.dart
+├── app_logo_background.dart
+└── app_text_field.dart
+```
+
+Shared widgets prevent common UI components from being recreated inside every feature.
+
+### `AppButton`
+
+Reusable application button with consistent styling and loading support.
+
+### `AppTextField`
+
+Reusable text/form field used by authentication and other forms.
+
+### `AppEmptyView`
+
+Displays consistent empty-state UI.
+
+For example:
+
+```text
+No matches today
+```
+
+or:
+
+```text
+No matches match your filters
+```
+
+### `AppErrorView`
+
+Displays reusable error UI with retry support.
+
+### `AppLogoBackground`
+
+Contains shared branding/background presentation used by application screens.
+
+Feature-specific widgets remain inside their feature instead.
+
+For example:
+
+```text
+features/matches/presentation/widgets/
+├── competition_quick_selector.dart
+├── matches_filter_bar.dart
+└── match_card.dart
+```
+
+These widgets are specific to football matches and therefore should not be placed in `core/widgets`.
+
+---
+
+# Features
+
+The application currently contains the following feature modules:
+
+```text
+features/
+├── auth/
+├── home/
+├── matches/
+├── profile/
+└── splash/
+```
+
+---
+
+# Authentication Feature
+
+```text
+auth/
+│
+├── data/
+│   ├── auth_remote_data_source.dart
+│   └── auth_repository.dart
+│
+├── logic/
+│   ├── auth_bloc.dart
+│   ├── auth_event.dart
+│   └── auth_state.dart
+│
+└── presentation/
+    ├── login_screen.dart
+    ├── signup_screen.dart
+    ├── forgot_password_screen.dart
+    │
+    └── widgets/
+        ├── auth_form_fields.dart
+        ├── auth_form_scaffold.dart
+        └── auth_submit_button.dart
+```
+
+The Auth feature handles:
+
+* Email/password registration.
+* Email/password login.
+* Google Sign-In.
+* Password reset.
+* Logout.
+* Firebase session persistence.
+* Authentication state tracking.
+
+Its architecture is:
+
+```text
+Auth Screen
+     │
+     ▼
+AuthEvent
+     │
+     ▼
+AuthBloc
+     │
+     ▼
+AuthRepository
+     │
+     ▼
+AuthRemoteDataSource
+     │
+     ▼
+Firebase Authentication
+```
+
+`AuthBloc` also listens to Firebase's authentication state stream so Firebase remains the source of truth.
+
+---
+
+# Matches Feature
+
+The Matches feature contains the largest application flow.
+
+```text
+matches/
+│
+├── data/
+│   ├── models/
+│   │   ├── league_model.dart
+│   │   ├── match_model.dart
+│   │   └── team_model.dart
+│   │
+│   ├── competition_catalog.dart
+│   ├── football_remote_data_source.dart
+│   └── football_repository.dart
+│
+├── logic/
+│   ├── matches_bloc.dart
+│   ├── matches_event.dart
+│   └── matches_state.dart
+│
+└── presentation/
+    ├── matches_screen.dart
+    │
+    └── widgets/
+        ├── competition_quick_selector.dart
+        ├── matches_filter_bar.dart
+        └── match_card.dart
+```
+
+Its full architecture is:
+
+```text
+MatchesScreen
+      │
+      │ User action
+      ▼
+ MatchesEvent
+      │
+      ▼
+ MatchesBloc
+      │
+      ▼
+FootballRepository
+      │
+      ▼
+FootballRemoteDataSource
+      │
+      ▼
+   ApiClient
+      │
+      ▼
+ API-Football
+      │
+      ▼
+     JSON
+      │
+      ▼
+MatchModel.fromJson()
+      │
+      ▼
+List<MatchModel>
+      │
+      ▼
+ MatchesBloc
+      │
+      ▼
+ MatchesState
+      │
+      ▼
+MatchesScreen
+```
+
+Search and filtering do not make unnecessary API requests.
+
+After matches are loaded:
+
+```text
+API
+ │
+ ▼
+allMatches
+```
+
+User interactions operate locally:
+
+```text
+allMatches
+   │
+   ├── Search
+   ├── Competition filter
+   └── Status filter
+          │
+          ▼
+    filteredMatches
+          │
+          ▼
+          UI
+```
+
+This is particularly important because API-Football has request quotas.
+
+---
+
+# Home Feature
+
+```text
+home/
+└── presentation/
+    └── home_screen.dart
+```
+
+The Home feature currently acts as the main landing screen for authenticated users.
+
+It provides access to the application's major sections and does not currently require its own data or BLoC layer.
+
+This demonstrates an important architectural principle:
+
+> Not every feature needs every layer.
+
+A feature should only introduce data or state-management layers when its complexity requires them.
+
+---
+
+# Profile Feature
+
+```text
+profile/
+└── presentation/
+    └── profile_screen.dart
+```
+
+The Profile screen displays information about the authenticated Firebase user and provides account actions such as logout.
+
+Because authentication state is already controlled globally by `AuthBloc`, the Profile feature does not need its own BLoC.
+
+Logout simply dispatches:
+
+```text
+LogoutRequested
+```
+
+to the existing application-level `AuthBloc`.
+
+---
+
+# Splash Feature
+
+```text
+splash/
+└── presentation/
+    └── splash_screen.dart
+```
+
+Splash is intentionally simple.
+
+It does not decide whether the user is authenticated.
+
+Instead:
+
+```text
+Splash
+   │
+   ▼
+wait for AuthBloc
+   │
+   ▼
+GoRouter guard
+   │
+   ├── Authenticated → Home
+   │
+   └── Unauthenticated → Login
+```
+
+This keeps authentication logic out of the UI.
+
+---
+
+# Application Bootstrap
+
+The top-level application files are:
+
+```text
+lib/
+├── main.dart
+├── app.dart
+└── firebase_options.dart
+```
+
+## `main.dart`
+
+Responsible for startup configuration such as:
+
+* Flutter initialization.
+* Environment variable loading.
+* Firebase initialization.
+* Google Sign-In initialization.
+* Device orientation configuration.
+* Starting the Flutter application.
+
+Conceptually:
+
+```text
+main()
+ │
+ ├── Load .env
+ ├── Initialize Firebase
+ ├── Initialize Google Sign-In
+ ├── Configure orientation
+ │
+ ▼
+runApp()
+```
+
+---
+
+## `app.dart`
+
+Acts as the application's **composition root**.
+
+This is where long-lived application dependencies are created and connected.
+
+For example:
+
+```text
+ApiClient
+    │
+    ▼
+FootballRemoteDataSource
+    │
+    ▼
+FootballRepository
+
+
+FirebaseAuth
+    │
+    ▼
+AuthRemoteDataSource
+    │
+    ▼
+AuthRepository
+    │
+    ▼
+AuthBloc
+```
+
+The application then provides those dependencies to the widget tree.
+
+This keeps object creation centralized instead of constructing repositories or API clients inside individual screens.
+
+---
+
+## `firebase_options.dart`
+
+Generated by FlutterFire and contains the platform-specific Firebase configuration required to initialize Firebase.
+
+---
+
+# Overall Application Architecture
+
+The full architecture can be summarized as:
+
+```text
+                         UI
+                          │
+                          ▼
+                  Presentation Layer
+                          │
+                       Events
+                          │
+                          ▼
+                        BLoC
+                          │
+                          ▼
+                      Repository
+                          │
+                          ▼
+                  Remote Data Source
+                          │
+                ┌─────────┴──────────┐
+                │                    │
+                ▼                    ▼
+          API-Football          Firebase Auth
+                │                    │
+                ▼                    ▼
+              Models            Firebase User
+                │                    │
+                └─────────┬──────────┘
+                          ▼
+                        State
+                          │
+                          ▼
+                          UI
+```
+
+The architecture follows several key principles:
+
+* **Feature-first organization** keeps related code together.
+* **BLoC** separates application state from widgets.
+* **Repository pattern** separates business/state logic from data-access details.
+* **Remote data sources** isolate communication with external services.
+* **Models** convert external JSON into typed Dart objects.
+* **Core infrastructure** prevents shared logic from being duplicated.
+* **GoRouter guards** centralize protected navigation.
+* **Firebase remains the source of truth for authentication.**
+* **Dio and interceptors** centralize networking and API authentication.
+* **Centralized error handling** prevents technical exceptions from leaking into the UI.
+* **Reusable themes and widgets** create a consistent user interface.
+* **Local search/filtering** reduces unnecessary API requests.
+
+This structure keeps the application maintainable while remaining lightweight enough for the current project size.

@@ -280,6 +280,24 @@ flowchart LR
 	SharedViews[Loader, empty, error, snackbar] --> Screens
 ```
 
+## Architecture Decision Record
+
+These decisions are ordered by when they shaped the project during
+implementation. They explain why the current structure exists, not just what
+files are present.
+
+| ADR | Decision | Why | Result |
+| --- | --- | --- | --- |
+| ADR-001 | Use feature-first folders with a small shared `core/` layer. | Grouping by feature keeps a capability's UI, state, and data close together while avoiding a single, large screen/model folder. | Features can evolve independently; shared infrastructure remains reusable and feature-independent. |
+| ADR-002 | Use BLoC for feature state and events. | Asynchronous authentication, fixtures, filtering, and refresh behavior should not live in widgets. | Screens react to immutable states and dispatch intent-focused events. |
+| ADR-003 | Add repository contracts and remote data sources. | BLoCs should not know Firebase SDK calls, Dio configuration, endpoints, or JSON details. | Logic depends on testable interfaces; external integrations are isolated behind repositories and source adapters. |
+| ADR-004 | Return `Success` and `FailureResult` from repositories. | Technical exceptions need a predictable representation before reaching BLoCs and UI. | Central error mappers translate Dio and Firebase failures into user-facing states. |
+| ADR-005 | Make Firebase auth state the source of truth for navigation. | Manually navigating after each login or logout would duplicate rules and create route race conditions. | `AuthBloc` observes Firebase and GoRouter centrally redirects protected and auth-only routes. |
+| ADR-006 | Keep Splash while the initial auth state resolves. | The router cannot safely choose Home or Login until Firebase reports the persisted session. | The app avoids a transient incorrect route and shows a branded loading state. |
+| ADR-007 | Cache fixture requests and filter loaded matches locally. | Search and status changes should feel immediate and should not consume API-Football quota. | `MatchesBloc` caches by request parameters and derives `filteredMatches` from loaded fixtures. |
+| ADR-008 | Create a shared Material 3 design system and reusable state views. | Styling and loading/error/empty states should not be reinvented per screen. | Theme tokens and shared widgets give auth, home, matches, and profile a consistent responsive UI. |
+
+
 ## Setup
 
 ### Prerequisites
