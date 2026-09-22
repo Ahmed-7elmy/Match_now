@@ -4,8 +4,8 @@
 
 Match Point is a Flutter football companion app built with Firebase,
 API-Football, Dio, GoRouter, and BLoC. Users can authenticate, browse fixtures,
-filter results, search teams or competitions, and manage their profile through
-a focused, responsive Material 3 interface.
+filter results, search teams or competitions, and manage their profile through a
+focused, responsive Material 3 interface.
 
 ## Screenshots
 
@@ -31,9 +31,11 @@ handling, and navigation guard, see [Architecture Guide](docs/architecture.md).
 
 ## Architecture
 
-The project is **feature-first** and follows **separation of concerns**. Each
-feature owns the code that is specific to it, while `core/` contains shared
-infrastructure, UI primitives, configuration, errors, routing, and utilities.
+The project is **feature-first** and follows **separation of concerns**. The
+application entry points compose the app, `core/` contains shared infrastructure,
+and each feature keeps its presentation, logic, and data code together. This
+makes the codebase easier to navigate, test, and extend without coupling one
+feature to another.
 
 ```mermaid
 flowchart TB
@@ -41,7 +43,10 @@ flowchart TB
 	App --> Router[GoRouter and auth guard]
 	App --> Core[core shared layer]
 	App --> AuthFeature[auth feature]
+	App --> HomeFeature[home feature]
 	App --> MatchesFeature[matches feature]
+	App --> ProfileFeature[profile feature]
+	App --> SplashFeature[splash feature]
 
 	AuthFeature --> AuthPresentation[presentation]
 	AuthFeature --> AuthLogic[logic: AuthBloc]
@@ -56,6 +61,47 @@ flowchart TB
 	Core --> Errors[typed errors and Result]
 ```
 
+### Project Structure
+
+```text
+lib/
+│
+├── main.dart                  # Application entry point
+├── app.dart                   # App composition and dependency injection
+├── firebase_options.dart      # Firebase platform configuration
+│
+├── core/                      # Shared, feature-independent code
+│   ├── config/                # Environment and app configuration
+│   ├── constants/             # API, date, and route constants
+│   ├── errors/                # Exceptions, failures, and mappers
+│   ├── network/               # Dio API client and interceptor
+│   ├── routes/                # GoRouter and authentication redirects
+│   ├── theme/                 # Colors, spacing, radius, and app theme
+│   ├── utils/                 # Result, validators, dates, and snackbars
+│   └── widgets/               # Reusable app-level UI components
+│
+└── features/                  # Feature-specific vertical slices
+    ├── auth/                  # Firebase authentication
+    ├── home/                  # Authenticated landing screen
+    ├── matches/               # Fixture browsing and filtering
+    ├── profile/               # Authenticated user profile
+    └── splash/                # Authentication-resolution loading screen
+```
+
+The separation can be understood as three responsibilities within each feature:
+
+- **Presentation** renders the UI, collects input, dispatches BLoC events, and
+  shows loading, empty, error, and success states.
+- **Logic** contains BLoCs, handles user-intent events, coordinates requests,
+  and emits immutable states without knowing widget layout details.
+- **Data** contains repository contracts and implementations, remote data
+  sources, models, and the integration details for Firebase or API-Football.
+
+Shared code belongs in `core/` only when it is independent of a particular
+feature. Features may depend on `core/`, but `core/` must not depend on a
+feature. This keeps dependencies flowing in one direction and prevents UI,
+networking, and authentication details from being mixed together.
+
 ### Layer Responsibilities
 
 | Layer | Responsibility | Must not do |
@@ -64,28 +110,6 @@ flowchart TB
 | `logic/` | Handle BLoC events, coordinate use cases, emit immutable states | Know Flutter widget layout details |
 | `data/` | Define repository contracts, call remote sources, return `Result` | Contain screen-specific UI state |
 | `core/` | Share configuration, routing, network client, errors, theme, widgets, and utilities | Depend on a particular feature |
-
-### Feature-First Layout
-
-```text
-lib/
-	core/                     # Shared, feature-independent code
-		config/                 # Environment and app configuration
-		constants/              # API, date, and route constants
-		errors/                 # Exceptions, failures, and mappers
-		network/                # Dio API client and interceptor
-		routes/                 # GoRouter and auth redirect logic
-		theme/                  # Colors, spacing, radius, dimensions, theme
-		utils/                  # Result, validators, dates, snackbars
-		widgets/                # Reusable app-level UI components
-	features/
-		auth/                   # Firebase authentication vertical slice
-		matches/                # Fixture browsing vertical slice
-		home/                   # Authenticated landing screen
-		profile/                # Authenticated user profile screen
-		splash/                 # Auth-resolution loading screen
-		standings/              # Reserved for a future feature
-```
 
 ## Data, Logic, and Presentation
 
@@ -211,13 +235,13 @@ flowchart TD
 - Password reset email and sign out.
 - Persistent session through Firebase's auth-state stream.
 - Local UI concerns, such as password visibility and keyboard dismissal, stay
-	in presentation rather than the BLoC.
+  in presentation rather than the BLoC.
 
 ### Matches
 
 - Fetches API-Football fixtures through Dio.
 - Supports quick competition selection, date selection, season selection,
-	team/league search, and match-status filtering.
+  team/league search, and match-status filtering.
 - Handles loading, empty, error, retry, and pull-to-refresh states.
 - Displays team logos with a safe football-icon fallback.
 
