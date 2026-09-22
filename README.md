@@ -37,29 +37,6 @@ and each feature keeps its presentation, logic, and data code together. This
 makes the codebase easier to navigate, test, and extend without coupling one
 feature to another.
 
-```mermaid
-flowchart TB
-	Main[main.dart] --> App[EyeGoApp composition root]
-	App --> Router[GoRouter and auth guard]
-	App --> Core[core shared layer]
-	App --> AuthFeature[auth feature]
-	App --> HomeFeature[home feature]
-	App --> MatchesFeature[matches feature]
-	App --> ProfileFeature[profile feature]
-	App --> SplashFeature[splash feature]
-
-	AuthFeature --> AuthPresentation[presentation]
-	AuthFeature --> AuthLogic[logic: AuthBloc]
-	AuthFeature --> AuthData[data: repository and Firebase source]
-
-	MatchesFeature --> MatchesPresentation[presentation]
-	MatchesFeature --> MatchesLogic[logic: MatchesBloc]
-	MatchesFeature --> MatchesData[data: repository, API source, models]
-
-	Core --> ApiClient[ApiClient + Dio interceptor]
-	Core --> Theme[theme + reusable widgets]
-	Core --> Errors[typed errors and Result]
-```
 
 ### Project Structure
 
